@@ -14,6 +14,14 @@ input <- read.delim("star_fusion_combo.tsv")
 geneList <-read_tsv("lists/CancerGeneList.tsv")
 fuseList <-read_tsv("lists/FusionList2.txt")
 
+#Previous Fusion Prep
+split <- unlist(str_split(fuseList$Fusions,"--"))
+fuseListH <- split[seq(1,length(split),2)]
+fuseListT <- split[seq(2,length(split),2)]
+
+input$Gene_In_Prev_Fuse <- F
+input$Gene_In_Prev_Fuse_Symbol <- NA
+
 input$Cancerous_Gene <- F
 input$Cancerous_Gene_Symbol <- NA
 input$Cancerous_Fusion <- F
@@ -48,6 +56,48 @@ bigApply <- function(x) {
   gene1 <- x["H_Gene"]
   gene2 <- x["T_Gene"]
   fuse <- paste(gene1,gene2,sep="--")
+  
+  #Previous gene columns
+  gene1PrevHIn <- gene1 %in% fuseListH
+  gene1PrevTIn <- gene1 %in% fuseListT
+  gene2PrevHIn <- gene2 %in% fuseListH
+  gene2PrevTIn <- gene2 %in% fuseListT
+  
+  if (any(c(gene1PrevHIn,gene1PrevTIn,gene2PrevHIn,gene2PrevTIn))) {
+    x["Gene_In_Prev_Fuse"] <- T
+  }
+  
+  check <- F
+  if (gene1PrevHIn && gene1PrevTIn) {
+    x["Gene_In_Prev_Fuse_Symbol"] <- paste(gene1,"(H,T)")
+    check <- T
+  }else if (gene1PrevHIn) {
+    x["Gene_In_Prev_Fuse_Symbol"] <- paste(gene1,"(H)")
+    check <- T
+  }else if (gene1PrevTIn) {
+    x["Gene_In_Prev_Fuse_Symbol"] <- paste(gene1,"(T)")
+    check <- T
+  }
+  
+  if (gene2PrevHIn && gene2PrevTIn) {
+    if(check) {
+      x["Gene_In_Prev_Fuse_Symbol"] <- paste(x["Gene_In_Prev_Fuse_Symbol"], paste(gene2,"(H,T)") , sep=",")
+    }else{
+      x["Gene_In_Prev_Fuse_Symbol"] <- paste(gene2,"(H,T)")
+    }
+  }else if (gene2PrevHIn) {
+    if(check) {
+      x["Gene_In_Prev_Fuse_Symbol"] <- paste(x["Gene_In_Prev_Fuse_Symbol"], paste(gene2,"(H)") , sep=",")
+    }else{
+      x["Gene_In_Prev_Fuse_Symbol"] <- paste(gene2,"(T)")
+    }
+  }else if (gene2PrevTIn) {
+    if(check) {
+      x["Gene_In_Prev_Fuse_Symbol"] <- paste(x["Gene_In_Prev_Fuse_Symbol"], paste(gene2,"(T)") , sep=",")
+    }else{
+      x["Gene_In_Prev_Fuse_Symbol"] <- paste(gene2,"(T)")
+    }
+  }
   
   gene1In <- gene1 %in% repAdjustedGene$Gene
   gene2In <- gene2 %in% repAdjustedGene$Gene
@@ -163,7 +213,7 @@ input <- apply(input, MARGIN = 1, FUN = bigApply)
 #Cleaning up table and adjusting order of columns
 input <- t(input)
 input <- as.tibble(input)
-input <- input[,c("Fusion_Name","H_Gene","T_Gene","Left_Breakpoint_Chr","Left_Breakpoint_Pos","Left_Breakpoint_Str","Right_Breakpoint_Chr","Right_Breakpoint_Pos","Right_Breakpoint_Str","Star_Junction_Readcount","Star_Spanning_Fragcount","FC_Common_Mapping_Reads","FC_Spanning_Pairs","FC_Spanning_Unique_Reads","Fusion_Transcript_Sequence","Fusion_Protein_Sequence","Fusion_Type","Catcher","Cancerous_Gene","Cancerous_Gene_Symbol","Cancerous_Fusion","Cancerous_Fusion_Symbol","Fusion_Cancer_Type","Targetable","Targetable_gene","Drug_name","Drug_chembl_id","H_Gene_PFAM_All","H_Gene_PFAM_IN_FUSION","T_Gene_PFAM_All","T_Gene_PFAM_IN_FUSION","Cancer_Domains")]
+input <- input[,c("Fusion_Name","H_Gene","T_Gene","Left_Breakpoint_Chr","Left_Breakpoint_Pos","Left_Breakpoint_Str","Right_Breakpoint_Chr","Right_Breakpoint_Pos","Right_Breakpoint_Str","Star_Junction_Readcount","Star_Spanning_Fragcount","FC_Common_Mapping_Reads","FC_Spanning_Pairs","FC_Spanning_Unique_Reads","Fusion_Transcript_Sequence","Fusion_Protein_Sequence","Fusion_Type","Catcher","Gene_In_Prev_Fuse","Gene_In_Prev_Fuse_Symbol", "Cancerous_Gene","Cancerous_Gene_Symbol","Cancerous_Fusion","Cancerous_Fusion_Symbol","Fusion_Cancer_Type","Targetable","Targetable_gene","Drug_name","Drug_chembl_id","H_Gene_PFAM_All","H_Gene_PFAM_IN_FUSION","T_Gene_PFAM_All","T_Gene_PFAM_IN_FUSION","Cancer_Domains")]
 
 input <- add_column(input,H_Gene_PFAM_NOT_IN_FUSION=NA,.before = "T_Gene_PFAM_All")
 input <- add_column(input,T_Gene_PFAM_NOT_IN_FUSION=NA,.before = "Cancer_Domains")
@@ -238,6 +288,6 @@ tierize <- function(x,input) {
   x["Tier"] <- tier
   return(x)
 }
-input <- t(apply(input, FUN = tierize, MARGIN = 1,input))
+input <- as.data.frame(t(apply(input, FUN = tierize, MARGIN = 1,input)))
 
 write.table(input, "star_fusion_analyzed.tsv", sep="\t", row.names = FALSE)
