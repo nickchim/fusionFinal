@@ -44,10 +44,7 @@ star_fusions_factor <- factor(star_input$`#FusionName`)
 catcher_fusions_factor <- factor(paste(catcher_input$`Gene_1_symbol(5end_fusion_partner)`,catcher_input$`Gene_2_symbol(3end_fusion_partner)`,sep="--"))
 
 
-#output <- tibble(Fusion_Name=levels(factor(c(levels(star_fusions_factor),levels(catcher_fusions_factor)))))
-
-#sigColNames_star <- c("LeftBreakpoint","RightBreakpoint","JunctionReadCount","SpanningFragCount","FUSION_CDS","FUSION_TRANSL","PROT_FUSION_TYPE")
-
+#Initilizing final columns
 output <- tibble(Fusion_Name=NA)
 output$H_Gene <- NA
 output$T_Gene <-NA
@@ -68,21 +65,24 @@ output$Fusion_Transcript_Sequence <- NA
 output$Fusion_Protein_Sequence <- NA
 output$Fusion_Type <- NA
 
-#The Big For Loop: Loops through each fusion and checks for repeats
+#The Big For Loop: Loops through each fusion, adds fusion data from either star or catcher into output
+#Repeats: Only combines data from fusion and star into one if the sequences are exactly the same
 for (fuse in levels(factor(c(levels(star_fusions_factor),levels(catcher_fusions_factor))))) {
   
   if (fuse %in% star_fusions_factor && fuse %in% catcher_fusions_factor) {
     
     index_star <- which(star_fusions_factor %in% fuse)
     index_catcher <- which(catcher_fusions_factor %in% fuse)
-    if (length(index)>1) {
-      #Checking for duplicates in Star
-      sequences_star <- star_input[index_star[1:length(index_star)],"FUSION_TRANSL"]
-      index_star <- index_star[!duplicated(sequences_star)]
-      
-      #Checking for duplicates in Catcher
-      sequences_catcher <- catcher_input[index_catcher[1:length(index_catcher)],"Fusion_sequence"]
-      index_catcher <- index_catcher[!duplicated(sequences_catcher)]
+    
+    #Checking for duplicates in Star
+    sequences_star <- star_input[index_star[1:length(index_star)],"FUSION_TRANSL"]
+    index_star <- index_star[!duplicated(sequences_star)]
+
+    #Checking for duplicates in Catcher
+    sequences_catcher <- catcher_input[index_catcher[1:length(index_catcher)],"Fusion_sequence"]
+    index_catcher <- index_catcher[!duplicated(sequences_catcher)]
+
+    if (length(index_star)>1 && length(index_catcher)>1) {
       for (i in index_star) {
         newRowNum <-nrow(output)+1
         output[newRowNum,"Fusion_Name"] <- fuse

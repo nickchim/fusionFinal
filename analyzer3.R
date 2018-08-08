@@ -42,6 +42,7 @@ input$Cancer_Domains <- NA
 domainList <-read_tsv("lists/Domain_List.tsv")
 
 #Big Apply Function
+#Annotate with Cancerous gene, Cancerous Fusion, Targetable info and Domain targetability
 bigApply <- function(x) {
   #Cancer Gene and Fusion Checker
   gene1 <- x["H_Gene"]
@@ -79,7 +80,7 @@ bigApply <- function(x) {
     }
   }
   
-  #Targetable?
+  #Targetable
   if (x["H_Gene"] %in% Target_genes$Trgt_Genes) {
     x["Targetable"] <- TRUE
     
@@ -141,7 +142,6 @@ bigApply <- function(x) {
     }
     
     if (dom %in% domainList$PF) {
-      #print(dom)
       if (is.na(x["Cancer_Domains"] )) {
         x["Cancer_Domains"] <- dom
       }else {
@@ -168,7 +168,7 @@ input <- input[,c("Fusion_Name","H_Gene","T_Gene","Left_Breakpoint_Chr","Left_Br
 input <- add_column(input,H_Gene_PFAM_NOT_IN_FUSION=NA,.before = "T_Gene_PFAM_All")
 input <- add_column(input,T_Gene_PFAM_NOT_IN_FUSION=NA,.before = "Cancer_Domains")
 
-#Annotate Domains in and out of fusion
+#Annotate Domains with in fusion and not in fusion
 domainFunc <- function(x) {
   allFuse <- unlist(str_split(unlist(str_split(x["H_Gene_PFAM_All"],":")),"; "))
   allFuse <- allFuse[seq(1,length(allFuse),by=2)]
@@ -240,5 +240,4 @@ tierize <- function(x,input) {
 }
 input <- t(apply(input, FUN = tierize, MARGIN = 1,input))
 
-#View(input)
 write.table(input, "star_fusion_analyzed.tsv", sep="\t", row.names = FALSE)
