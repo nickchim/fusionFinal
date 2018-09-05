@@ -1,4 +1,4 @@
-The inputs for the pipeline are two files: one Star Fusion, the other Fusion Catcher. The star_fusion_combiner script is named thus because it combines these two inputs. The star_fusion_analyzer script annotates these files with the following additions: cancerous fusion or gene, target-ability and cancerous domain. The same script then tierizes based on the values annotated as well as whether the fusion was found in Star Catcher, Fusion Catcher or both. 
+The inputs for the pipeline are two files: one Star Fusion, the other Fusion Catcher. The star_fusion_combiner script is named thusly because it combines these two inputs. The star_fusion_analyzer script annotates these files with the following additions: cancerous fusion or gene, target-ability and cancerous domain. The same script then tierizes based on the values annotated as well as whether the fusion was found in Star Catcher, Fusion Catcher or both. 
 
 Workflow:
 
